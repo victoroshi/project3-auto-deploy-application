@@ -207,6 +207,7 @@ jobs:
               ansible-playbook -i inventory.txt configure-server.yml
             no_output_timeout: 25m
         # Rollback on failure
+        - remove-bucket-contents
         - destroy-environment    
 
   # run-migrations:

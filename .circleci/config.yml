@@ -296,146 +296,146 @@ jobs:
       - destroy-environment
       - revert-migrations
   
-    deploy-frontend:
-      docker:
-         # Docker image here that supports AWS CLI
-        - image: python:3.10-alpine3.16
-      steps:
-        - checkout
-        # persist to workspace
-        - attach_workspace:
-            at: ~/
-        - run:
-            name: Setup gzip tar curl aws-cli npm nodejs
-            command: |
-              apk add --update --no-cache tar gzip
-              apk add --update --no-cache nodejs npm
-              apk add --update --no-cache aws-cli curl
-        - run:
-            name: Get Backend URL
-            command: |
-              export BACKEND_IP=$(aws ec2 describe-instances \
-              --query "Reservations[*].Instances[*].[PublicIpAddress]" \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --output text)
-              export API_URL="http://${BACKEND_IP}:3030"
-              echo "API_URL=${API_URL}"
-              # reddirect API url to .env file 
-              echo API_URL="http://${BACKEND_IP}:3030" > frontend/.env
-              # print to stdout
-              cat frontend/.env
-        - run:
-            name: Deploy frontend objects
-            command: |
-              cd frontend
-              npm install
-              npm run build
-              tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-              aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive 
-              
-        # Here's where you will add some code to rollback on failure
-        - destroy-environment
-        - revert-migrations
-    
-    deploy-backend:
-      docker:
-        # Docker image here that supports Ansible
-        - image: python:3.10-alpine3.16
-      steps:
-        # checkout code from git
-        - checkout
-        # ddd ssh key fingerprint
-        - add_ssh_keys:
-           fingerprints:
-              - "c5:ca:e0:a6:de:56:ef:33:fa:44:26:bb:aa:34:1e:d2"
-        # attach workspace
-        - attach_workspace:
-            at: ~/
-        - run:
-            name: Install dependencies
-            command: |
-              apk add --update --no-cache ansible
-              apk add --update --no-cache tar gzip
-              apk add --update --no-cache nodejs npm
-              apk add --update --no-cache aws-cli curl
-        - run:
-            name: Deploy Backend
-            command: |
-              cd backend
-              
-              # set up environment variables for backend connections
-              touch .env
-              echo ENVIRONMENT=production > ".env"
-              echo TYPEORM_CONNECTION=postgres >> ".env"
-              echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
-              echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
-              echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
-              echo NODE_ENV=production >> ".env"
-              echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
-              echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
-              echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
-              echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
-              echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
-              npm install
-              npm run build
-              cd ..
-              pwd
-              ls -a
-              # zip the backend directory
-              tar -C backend -czvf artifact.tar.gz .
-              # create directory in deploy roles && move zip artifact to deploy/role for ansible
-              mkdir .circleci/ansible/roles/deploy/files/
-              mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
-              # navigate to ansible & display content of inventory
-              cd .circleci/ansible
-              echo "Contents  of the inventory.txt file is -------"
-              cat inventory.txt
-              ansible-playbook -i inventory.txt deploy-backend.yml
-        # Here's where you will add some code to rollback on failure
-        - destroy-environment
-        - revert-migrations
+  deploy-frontend:
+    docker:
+       # Docker image here that supports AWS CLI
+      - image: python:3.10-alpine3.16
+    steps:
+      - checkout
+      # persist to workspace
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Setup gzip tar curl aws-cli npm nodejs
+          command: |
+            apk add --update --no-cache tar gzip
+            apk add --update --no-cache nodejs npm
+            apk add --update --no-cache aws-cli curl
+      - run:
+          name: Get Backend URL
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+            --query "Reservations[*].Instances[*].[PublicIpAddress]" \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL=${API_URL}"
+            # reddirect API url to .env file 
+            echo API_URL="http://${BACKEND_IP}:3030" > frontend/.env
+            # print to stdout
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive 
+            
+      # Here's where you will add some code to rollback on failure
+      - destroy-environment
+      - revert-migrations
+  
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+      - image: python:3.10-alpine3.16
+    steps:
+      # checkout code from git
+      - checkout
+      # ddd ssh key fingerprint
+      - add_ssh_keys:
+         fingerprints:
+            - "c5:ca:e0:a6:de:56:ef:33:fa:44:26:bb:aa:34:1e:d2"
+      # attach workspace
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update --no-cache ansible
+            apk add --update --no-cache tar gzip
+            apk add --update --no-cache nodejs npm
+            apk add --update --no-cache aws-cli curl
+      - run:
+          name: Deploy Backend
+          command: |
+            cd backend
+            
+            # set up environment variables for backend connections
+            touch .env
+            echo ENVIRONMENT=production > ".env"
+            echo TYPEORM_CONNECTION=postgres >> ".env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
+            echo NODE_ENV=production >> ".env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
+            npm install
+            npm run build
+            cd ..
+            pwd
+            ls -a
+            # zip the backend directory
+            tar -C backend -czvf artifact.tar.gz .
+            # create directory in deploy roles && move zip artifact to deploy/role for ansible
+            mkdir .circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
+            # navigate to ansible & display content of inventory
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # Here's where you will add some code to rollback on failure
+      - destroy-environment
+      - revert-migrations
 
-    smoke-test:
-      docker:
-        # Docker image that support job tasks
-        - image: python:3.10-alpine3.16 
-      steps:
-        # Checkout code from git
-        - checkout
-        - run:
-            name: Install dependencies
-            command: |
-              apk add --update --no-cache tar gzip
-              apk add --update --no-cache curl aws-cli
-              apk add --update --no-cache nodejs npm
-        - run:
-            name: Backend smoke test
-            command: |
-              BACKEND_PUB_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query "Reservations[*].Instances[*].[PublicIpAddress]" \
-              --output text)
-              export API_URL=http://${BACKEND_PUB_IP}:3030
-              echo "API_URL=${API_URL}"
-              echo "Wait for Server to accept GET connection request:"
-              sleep 60
-              if [[ 'ok' =~ $(curl -s --connect-timeout 5 ${API_URL}/api/status | grep -o ok) ]];then return 0 else return 1;fi
-        - run:
-            name: Frontend smoke test
-            command: |
-              URL=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees
-              echo ${URL}
-              
-              if curl -s ${URL} | grep "Welcome"
-              then
-                # Change this(from 1) to 0 after the job fails
-                return 0
-              else
-                return 1
-              fi
-              
-        - destroy-environment
-        - revert-migrations
+  smoke-test:
+    docker:
+      # Docker image that support job tasks
+      - image: python:3.10-alpine3.16 
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update --no-cache tar gzip
+            apk add --update --no-cache curl aws-cli
+            apk add --update --no-cache nodejs npm
+      - run:
+          name: Backend smoke test
+          command: |
+            BACKEND_PUB_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --query "Reservations[*].Instances[*].[PublicIpAddress]" \
+            --output text)
+            export API_URL=http://${BACKEND_PUB_IP}:3030
+            echo "API_URL=${API_URL}"
+            echo "Wait for Server to accept GET connection request:"
+            sleep 60
+            if [[ 'ok' =~ $(curl -s --connect-timeout 5 ${API_URL}/api/status | grep -o ok) ]];then return 0 else return 1;fi
+      - run:
+          name: Frontend smoke test
+          command: |
+            URL=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees
+            echo ${URL}
+            
+            if curl -s ${URL} | grep "Welcome"
+            then
+              # Change this(from 1) to 0 after the job fails
+              return 0
+            else
+              return 1
+            fi
+            
+      - destroy-environment
+      - revert-migrations
 
   # cloudfront-update:
   #   docker:

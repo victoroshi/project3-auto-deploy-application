@@ -37,20 +37,6 @@ commands:
               npm run build
               npm run migrations:revert
             fi
-  remove-bucket-contents:
-    description: Remove contents of bucket
-    parameters:
-      bucket_name:
-        type: string
-        default: "${CIRCLE_WORKFLOW_ID:0:7}"
-    steps:
-      - run:
-          name: Remove contents of bucket
-          when: on_fail
-          command: |
-             # your code here
-             aws s3 rm s3://udapeople-<< parameters.bucket_name >> --recursive
-
             
 jobs:
   build-frontend:
